@@ -146,7 +146,7 @@ class MyAccountBlock(QWidget, AccountBlock):
 
         self.account.setText(steam_conf.get("steam_username"))
         self.account.show()
-        self.__steam_client = MySteamClient(steam_conf)
+        self.__steam_client = MySteamClient(steam_conf, False)
         self.__code_generate_worker = MyCodeGenerateWorker(self.__steam_client)
         self.__workth = QThread()
         self.__code_generate_worker.sig_code_generated.connect(self.showCode)
@@ -171,8 +171,12 @@ class MyAccountBlock(QWidget, AccountBlock):
         # confirmations = self.__steam_client.get_confirmations()
         self.confirmationList = MyConfirmationList()
         self.confirmationList.setWindowModality(Qt.WindowModality.ApplicationModal)
-
-        confirmations = self.__steam_client.get_confirmations()
+        confirmations = []
+        try:
+            confirmations = self.__steam_client.get_confirmations()
+        except:
+            QMessageBox.information(self, "提示", "获取报价失败, 请稍后再试")
+            return
         confirmaionBlocks = []
         for confirmation in confirmations:
             myConfirmBlock = MyConfirmBlock(confirmation)

@@ -14,8 +14,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_AccountList(object):
     def setupUi(self, AccountList):
         AccountList.setObjectName("AccountList")
-        AccountList.resize(350, 400)
-        AccountList.setMinimumSize(QtCore.QSize(350, 400))
+        AccountList.resize(350, 500)
+        AccountList.setMinimumSize(QtCore.QSize(350, 500))
         self.centralwidget = QtWidgets.QWidget(AccountList)
         self.centralwidget.setObjectName("centralwidget")
         self.accountList = QtWidgets.QScrollArea(self.centralwidget)

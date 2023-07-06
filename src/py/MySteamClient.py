@@ -57,8 +57,9 @@ class MyConfirmation:
 
 
 class MySteamClient(SteamClient):
-    def __init__(self, steam_conf):
+    def __init__(self, steam_conf, login_immediate=True):
         self.__steam_conf = steam_conf
+        self.__login_immediate = login_immediate
         api_key = steam_conf.get("api_key", "")
         steam_username = steam_conf.get("steam_username", "")
         steam_password = steam_conf.get("steam_password", "")
@@ -66,24 +67,33 @@ class MySteamClient(SteamClient):
             steam_password, "Empty Password"
         ) and check_empty(api_key, "Empty Apikey")
         super(MySteamClient, self).__init__(api_key)
-        if len(steam_username) != 0:
+        if len(steam_username) != 0 and login_immediate:
             super(MySteamClient, self).login(
                 steam_username, steam_password, json.dumps(steam_conf)
             )
 
     def get_confirmations(self) -> List[MyConfirmation]:
-        confirmations = []
-        confirmation_executor = ConfirmationExecutor(
-            self.__steam_conf.get("identity_secret"),
-            self.__steam_conf.get("steamid"),
-            self._session,
-        )
-        for confirmation in confirmation_executor._get_confirmations():
-            confirmation_details_page = (
-                confirmation_executor._fetch_confirmation_details_page(confirmation)
+        if self.__login_immediate:
+            confirmations = []
+            confirmation_executor = ConfirmationExecutor(
+                self.__steam_conf.get("identity_secret"),
+                self.__steam_conf.get("steamid"),
+                self._session,
             )
-            confirmations.append(MyConfirmation(confirmation_details_page))
-        return confirmations
+            for confirmation in confirmation_executor._get_confirmations():
+                confirmation_details_page = (
+                    confirmation_executor._fetch_confirmation_details_page(
+                        confirmation)
+                )
+                confirmations.append(MyConfirmation(confirmation_details_page))
+            return confirmations
+        else:
+            steam_username = self.__steam_conf.get("steam_username", "")
+            steam_password = self.__steam_conf.get("steam_password", "")
+            super(MySteamClient, self).login(steam_username,
+                                             steam_password, json.dumps(self.__steam_conf))
+            self.__login_immediate = True
+            return self.get_confirmations()
 
     def generate_code(self):
         return generate_code(self.__steam_conf.get("shared_secret"))
