@@ -178,6 +178,7 @@ class MyAccountBlock(QWidget, AccountBlock):
         self.__workth.start()
         self.sig_worker_start.emit()
         self.showConfirmationButtom.clicked.connect(self.showConfirmations)
+        self.copyCode.clicked.connect(self.copyGeneratedCode)
 
         self.account.setAttribute(Qt.WA_TranslucentBackground)
         self.account.setWindowFlags(Qt.FramelessWindowHint)
@@ -213,6 +214,11 @@ class MyAccountBlock(QWidget, AccountBlock):
             )
             confirmaionBlocks.append(myConfirmBlock)
         self.confirmationList.showConfirmations(confirmaionBlocks)
+
+    def copyGeneratedCode(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.twoFactorCode.text())
+        QMessageBox.information(self, "提示", "验证码复制成功")
 
     def waitExit(self):
         self.__code_generate_worker.stop()
