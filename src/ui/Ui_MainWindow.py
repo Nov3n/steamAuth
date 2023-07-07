@@ -22,7 +22,9 @@ class Ui_AccountList(object):
         self.accountList.setGeometry(QtCore.QRect(0, 0, 350, 490))
         self.accountList.setMinimumSize(QtCore.QSize(350, 300))
         self.accountList.setMaximumSize(QtCore.QSize(350, 800))
-        self.accountList.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.accountList.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.AdjustToContents
+        )
         self.accountList.setWidgetResizable(True)
         self.accountList.setObjectName("accountList")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
@@ -36,4 +38,4 @@ class Ui_AccountList(object):
 
     def retranslateUi(self, AccountList):
         _translate = QtCore.QCoreApplication.translate
-        AccountList.setWindowTitle(_translate("AccountList", "MainWindow"))
+        AccountList.setWindowTitle(_translate("AccountList", "NovenSteamAuth"))

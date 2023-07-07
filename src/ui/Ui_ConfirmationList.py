@@ -29,4 +29,4 @@ class Ui_ConfirmationList(object):
 
     def retranslateUi(self, ConfirmationList):
         _translate = QtCore.QCoreApplication.translate
-        ConfirmationList.setWindowTitle(_translate("ConfirmationList", "ScrollArea"))
+        ConfirmationList.setWindowTitle(_translate("ConfirmationList", "待确认报价"))

@@ -14,41 +14,46 @@ class MyMainWindow(QMainWindow, Ui_AccountList):
     def __init__(self, parent=None):
         super(MyMainWindow, self).__init__(parent)
         self.setupUi(self)
-        self.SteamClientList = []
-        self._inner_widget = None
-        self._inner_widget_layout = None
+        self.__accountBlockList = []
+        self.__inner_widget = None
+        self.__inner_widget_layout = None
         # 读取steam信息
         steam_conf_list = json.load(open("./conf/test.json", "r", encoding="utf8"))
         for i in range(0, len(steam_conf_list)):
-            # self.SteamClientList.append(MySteamClient(steam_conf_list[i]))
             self.add_steam_client(steam_conf_list[i])
             time.sleep(5)
             pass
 
     def add_steam_client(self, steam_conf):
-        if not self._inner_widget:
-            self._inner_widget = QWidget()
-            self._inner_widget_layout = QVBoxLayout()
-            self._inner_widget.setLayout(self._inner_widget_layout)
+        if not self.__inner_widget:
+            self.__inner_widget = QWidget()
+            self.__inner_widget_layout = QVBoxLayout()
+            self.__inner_widget.setLayout(self.__inner_widget_layout)
         ui_steam_account = MyAccountBlock(steam_conf)
-        self._inner_widget_layout.addWidget(ui_steam_account)
-        self.accountList.setWidget(self._inner_widget)
+        self.__inner_widget_layout.addWidget(ui_steam_account)
+        self.__accountBlockList.append(ui_steam_account)
+        self.accountList.setWidget(self.__inner_widget)
         self.accountList.show()
+
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        for accountBlock in self.__accountBlockList:
+            accountBlock.waitExit()
+        print("关闭窗口")
 
 
 class MyConfirmationList(QScrollArea, ConfirmList):
     def __init__(self, parent=None):
         super(MyConfirmationList, self).__init__(parent)
         self.setupUi(self)
-        self._inner_widget = QWidget()
-        self._inner_widget_layout = QVBoxLayout()
-        self._inner_widget.setLayout(self._inner_widget_layout)
+        self.__inner_widget = QWidget()
+        self.__inner_widget_layout = QVBoxLayout()
+        self.__inner_widget.setLayout(self.__inner_widget_layout)
 
     def showConfirmations(self, confirmatios):
-        self._confirmations = confirmatios
+        self.__confirmations = confirmatios
         for confirmation in confirmatios:
-            self._inner_widget_layout.addWidget(confirmation)
-        self.setWidget(self._inner_widget)
+            self.__inner_widget_layout.addWidget(confirmation)
+        self.setWidget(self.__inner_widget)
         self.show()
 
 
@@ -91,7 +96,6 @@ class MyConfirmBlock(QWidget, ConfirmBlock):
         if self.__reject:
             try:
                 rsp = self.__reject(self.confirmation.get_trade_offer())
-                print(rsp)
                 if rsp.get("tradeofferid", False):
                     self.show_res(1)
                 else:
@@ -120,20 +124,39 @@ class MyConfirmBlock(QWidget, ConfirmBlock):
 
 
 class MyCodeGenerateWorker(QObject):
-    sig_code_generated = pyqtSignal(str)
-    sig_finish = pyqtSignal()
-    thread_run = True
+    # 实际上应该对外提供接口, 传入槽函数进行内部connect
+    __sig_code_generated = pyqtSignal(str)
+    __sig_finish = pyqtSignal()
+    __thread_run = True
 
     def __init__(self, steam_client):
         super(MyCodeGenerateWorker, self).__init__()
-        self.thread_run = True
-        self._steam_client = steam_client
+        self.__thread_run = True
+        self.__steam_client = steam_client
+        self.__is_running = False
 
     def run(self):
-        while self.thread_run:
-            self.sig_code_generated.emit(self._steam_client.generate_code())
-            time.sleep(15)
-        self.sig_finish.emit()
+        self.__is_running = True
+        while self.__thread_run:
+            self.__sig_code_generated.emit(self.__steam_client.generate_code())
+            sleep_cnt = 0
+            # 保证程序能够快速退出不用长时间等待
+            while sleep_cnt < 100 and self.__thread_run:
+                time.sleep(0.1)
+                sleep_cnt = sleep_cnt + 1
+        self.__sig_finish.emit()
+        self.__is_running = False
+
+    def stop(self):
+        if self.__thread_run:
+            self.__thread_run = False
+
+    def wait(self):
+        while self.__is_running:
+            time.sleep(0.1)
+
+    def addCodeGeneratedLister(self, func):
+        self.__sig_code_generated.connect(func)
 
 
 class MyAccountBlock(QWidget, AccountBlock):
@@ -149,7 +172,7 @@ class MyAccountBlock(QWidget, AccountBlock):
         self.__steam_client = MySteamClient(steam_conf, False)
         self.__code_generate_worker = MyCodeGenerateWorker(self.__steam_client)
         self.__workth = QThread()
-        self.__code_generate_worker.sig_code_generated.connect(self.showCode)
+        self.__code_generate_worker.addCodeGeneratedLister(self.showCode)
         self.__code_generate_worker.moveToThread(self.__workth)
         self.sig_worker_start.connect(self.__code_generate_worker.run)
         self.__workth.start()
@@ -190,3 +213,7 @@ class MyAccountBlock(QWidget, AccountBlock):
             )
             confirmaionBlocks.append(myConfirmBlock)
         self.confirmationList.showConfirmations(confirmaionBlocks)
+
+    def waitExit(self):
+        self.__code_generate_worker.stop()
+        self.__code_generate_worker.wait()
