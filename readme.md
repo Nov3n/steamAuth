@@ -1,3 +1,3 @@
-* `pyuic5 -o {输出文件名} {输入designer设计好的.ui后缀界面文件}` 
-* # steamAuth
 # steamAuth
+由于WinAuth已经停止更新了，并且将WinAuth的验证文件导出到其他2FA软件中没有直接使用的接口，因此使用Python的steampy库及PyQt框架写跨平台的steamAuthenticator
+众所周知，steam的一些域名在国内是被ban的，因此使用本软件，需要较好的科学上网环境
